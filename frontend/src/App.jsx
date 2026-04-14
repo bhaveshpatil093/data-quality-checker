@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import './index.css'
 import { Upload, LayoutDashboard, AlertTriangle, BarChart2, FileText, ChevronRight } from 'lucide-react'
 import UploadScreen from './screens/UploadScreen.jsx'
@@ -29,6 +29,10 @@ export default function App() {
   const [screen, setScreen] = useState('upload')
   const [hasFile, setHasFile] = useState(false)
   const [issues] = useState(MOCK_ISSUES)
+
+  useEffect(() => {
+    document.title = 'DataIQ — Data Quality Platform'
+  }, [])
 
   const handleAnalyze = useCallback(() => { setHasFile(true); setScreen('analyzing') }, [])
   const handleDone = useCallback(() => setScreen('dashboard'), [])
