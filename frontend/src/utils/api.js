@@ -44,9 +44,16 @@ export async function uploadDataset(file) {
     clearTimeout(timeoutId)
   }
 
-  const payload = await response.json().catch(() => ({}))
+  const rawBody = await response.text().catch(() => '')
+  let payload = {}
+  try {
+    payload = rawBody ? JSON.parse(rawBody) : {}
+  } catch {
+    payload = {}
+  }
   if (!response.ok) {
-    throw new Error(payload.error || 'Upload failed')
+    const fallback = rawBody && !rawBody.startsWith('<') ? rawBody : `Upload failed with status ${response.status}`
+    throw new Error(payload.error || fallback)
   }
 
   return payload

@@ -1,0 +1,11 @@
+{
+  "name": "data-quality-checker-root",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "multer": "^2.0.2",
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
+  }
+}

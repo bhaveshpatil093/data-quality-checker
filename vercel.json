@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd frontend && rm -rf node_modules && npm ci",
+  "installCommand": "npm ci && cd frontend && rm -rf node_modules && npm ci",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist"
 }
