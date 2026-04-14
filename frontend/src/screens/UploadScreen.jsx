@@ -1,21 +1,29 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, FileSpreadsheet, Zap, ChevronRight, X } from 'lucide-react'
-import Papa from 'papaparse'
+import { uploadDataset } from '../utils/api.js'
 
 export default function UploadScreen({ onAnalyze }) {
   const [dragging, setDragging] = useState(false)
   const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(null)
+  const [dataset, setDataset] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const inputRef = useRef()
 
-  const handleFile = useCallback((f) => {
+  const handleFile = useCallback(async (f) => {
     if (!f) return
+    setLoading(true)
+    setError('')
     setFile(f)
-    Papa.parse(f, {
-      preview: 6,
-      complete: (res) => setPreview(res),
-      error: () => setPreview(null),
-    })
+    try {
+      const parsed = await uploadDataset(f)
+      setDataset(parsed)
+    } catch (err) {
+      setDataset(null)
+      setError(err?.message || 'Failed to read file')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const onDrop = (e) => {
@@ -30,8 +38,8 @@ export default function UploadScreen({ onAnalyze }) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
   }
 
-  const headers = preview?.data?.[0] || []
-  const rows = preview?.data?.slice(1) || []
+  const headers = dataset?.headers || []
+  const rows = dataset?.rows?.slice(0, 6) || []
 
   return (
     <div className="page">
@@ -81,17 +89,29 @@ export default function UploadScreen({ onAnalyze }) {
                   <div className="file-meta">
                     {formatSize(file.size)} &nbsp;·&nbsp;
                     {headers.length} columns &nbsp;·&nbsp;
-                    {(preview?.meta?.cursor / file.size * 100).toFixed(0)}% sampled (preview)
+                    {dataset?.rows?.length || 0} rows parsed
                   </div>
                 </div>
               </div>
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={() => { setFile(null); setPreview(null) }}
+                onClick={() => { setFile(null); setDataset(null); setError('') }}
               >
                 <X size={14} /> Remove
               </button>
             </div>
+
+            {loading && (
+              <div style={{ padding: '18px 20px', color: 'var(--text-3)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                Parsing uploaded file...
+              </div>
+            )}
+
+            {error && (
+              <div style={{ padding: '18px 20px', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                {error}
+              </div>
+            )}
 
             {headers.length > 0 && (
               <div className="preview-table-wrap">
@@ -106,9 +126,9 @@ export default function UploadScreen({ onAnalyze }) {
                     {rows.map((row, ri) => (
                       <tr key={ri}>
                         <td style={{ color: 'var(--text-3)' }}>{ri + 1}</td>
-                        {headers.map((_, ci) => (
-                          <td key={ci}>
-                            {row[ci] ?? <span style={{ color: 'var(--red)', fontStyle: 'italic' }}>null</span>}
+                        {headers.map((header) => (
+                          <td key={header}>
+                            {row[header] ?? <span style={{ color: 'var(--red)', fontStyle: 'italic' }}>null</span>}
                           </td>
                         ))}
                       </tr>
@@ -119,10 +139,10 @@ export default function UploadScreen({ onAnalyze }) {
             )}
 
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => { setFile(null); setPreview(null) }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => { setFile(null); setDataset(null); setError('') }}>
                 Change File
               </button>
-              <button className="btn btn-primary" onClick={() => onAnalyze(file, preview)}>
+              <button className="btn btn-primary" disabled={!dataset || loading || !!error} onClick={() => onAnalyze(file, dataset)}>
                 <Zap size={16} />
                 Run Full Audit
                 <ChevronRight size={16} />

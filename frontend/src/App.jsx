@@ -7,7 +7,6 @@ import DashboardScreen from './screens/DashboardScreen.jsx'
 import IssuesScreen from './screens/IssuesScreen.jsx'
 import ColumnProfileScreen from './screens/ColumnProfileScreen.jsx'
 import ReportScreen from './screens/ReportScreen.jsx'
-import { MOCK_ISSUES } from './mockData.js'
 
 const NAV = [
   { id: 'upload',    label: 'Upload',          icon: Upload,          section: 'start',    requiresFile: false },
@@ -28,17 +27,66 @@ const TITLES = {
 export default function App() {
   const [screen, setScreen] = useState('upload')
   const [hasFile, setHasFile] = useState(false)
-  const [issues] = useState(MOCK_ISSUES)
+  const [activeFile, setActiveFile] = useState(null)
+  const [dataset, setDataset] = useState({ headers: [], rows: [] })
+  const [audit, setAudit] = useState({
+    scores: {
+      overall: 0,
+      completeness: 0,
+      uniqueness: 0,
+      consistency: 0,
+      penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 },
+    },
+    issues: [],
+    columns: [],
+    summary: { rowCount: 0, columnCount: 0, duplicateRows: 0, missingByColumn: [], scoreBreakdown: { formula: '', penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 } } },
+  })
 
   useEffect(() => {
     document.title = 'DataIQ — Data Quality Platform'
   }, [])
 
-  const handleAnalyze = useCallback(() => { setHasFile(true); setScreen('analyzing') }, [])
+  const handleAnalyze = useCallback((file, backendPayload) => {
+    setActiveFile(file)
+    setDataset({ headers: backendPayload.headers || [], rows: backendPayload.rows || [] })
+    setAudit(backendPayload.audit || {
+      scores: {
+        overall: 0,
+        completeness: 0,
+        uniqueness: 0,
+        consistency: 0,
+        penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 },
+      },
+      issues: [],
+      columns: [],
+      summary: { rowCount: 0, columnCount: 0, duplicateRows: 0, missingByColumn: [], scoreBreakdown: { formula: '', penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 } } },
+    })
+    setHasFile(true)
+    setScreen('analyzing')
+  }, [])
   const handleDone = useCallback(() => setScreen('dashboard'), [])
   const handleReaudit = useCallback(() => { setHasFile(true); setScreen('analyzing') }, [])
-  const navigate = (id) => { if (id === 'upload') setHasFile(false); setScreen(id) }
-  const pending = issues.filter(i => !i.fixed).length
+  const navigate = (id) => {
+    if (id === 'upload') {
+      setHasFile(false)
+      setActiveFile(null)
+      setDataset({ headers: [], rows: [] })
+      setAudit({
+        scores: {
+          overall: 0,
+          completeness: 0,
+          uniqueness: 0,
+          consistency: 0,
+          penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 },
+        },
+        issues: [],
+        columns: [],
+        summary: { rowCount: 0, columnCount: 0, duplicateRows: 0, missingByColumn: [], scoreBreakdown: { formula: '', penalties: { missingValues: 0, duplicateRows: 0, inconsistencies: 0, total: 0 } } },
+      })
+    }
+    setScreen(id)
+  }
+  const pending = audit.issues.filter((i) => !i.fixed).length
 
   return (
     <div className="app">
@@ -86,7 +134,7 @@ export default function App() {
             {hasFile && screen !== 'upload' && (
               <>
                 <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-                  sales_data_q1_2024.csv
+                  {activeFile?.name}
                 </span>
                 <ChevronRight size={12} color="var(--text-3)" />
               </>
@@ -96,7 +144,7 @@ export default function App() {
           <div className="topbar-right">
             {hasFile && (
               <span className="topbar-chip">
-                DQ Score: <strong style={{ color: 'var(--yellow)' }}>63</strong>
+                DQ Score: <strong style={{ color: 'var(--yellow)' }}>{audit.scores.overall}</strong>
               </span>
             )}
             
@@ -105,10 +153,10 @@ export default function App() {
 
         {screen === 'upload'    && <UploadScreen onAnalyze={handleAnalyze} />}
         {screen === 'analyzing' && <AnalyzingScreen onComplete={handleDone} />}
-        {screen === 'dashboard' && <DashboardScreen onNavigate={navigate} />}
-        {screen === 'issues'    && <IssuesScreen />}
-        {screen === 'columns'   && <ColumnProfileScreen />}
-        {screen === 'report'    && <ReportScreen onReaudit={handleReaudit} />}
+        {screen === 'dashboard' && <DashboardScreen onNavigate={navigate} file={activeFile} dataset={dataset} audit={audit} />}
+        {screen === 'issues'    && <IssuesScreen file={activeFile} issues={audit.issues} />}
+        {screen === 'columns'   && <ColumnProfileScreen file={activeFile} columns={audit.columns} />}
+        {screen === 'report'    && <ReportScreen onReaudit={handleReaudit} file={activeFile} dataset={dataset} audit={audit} />}
 
         <footer className="hackathon-footer" role="contentinfo">
           Built with 🤎 for the Databricks-Accenture Hackathon by Team Elite (Bhavesh Patil &amp; Shreya Shelar)

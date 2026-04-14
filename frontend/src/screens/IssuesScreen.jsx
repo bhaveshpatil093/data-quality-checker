@@ -1,14 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp, Zap, CheckCircle, RotateCcw, Sparkles } from 'lucide-react'
-import { MOCK_ISSUES } from '../mockData.js'
 
 const SEV_ORDER = { critical: 0, warning: 1, minor: 2 }
 
-export default function IssuesScreen() {
-  const [issues, setIssues] = useState(MOCK_ISSUES)
+export default function IssuesScreen({ file, issues: sourceIssues }) {
+  const [issues, setIssues] = useState(sourceIssues)
   const [expanded, setExpanded] = useState(null)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    setIssues(sourceIssues)
+  }, [sourceIssues])
 
   const filtered = issues
     .filter(i =>
@@ -54,7 +57,7 @@ export default function IssuesScreen() {
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <div className="breadcrumb">
-            <span>sales_data_q1_2024.csv</span>
+            <span>{file?.name}</span>
             <span>›</span>
             <span>Issues Panel</span>
           </div>

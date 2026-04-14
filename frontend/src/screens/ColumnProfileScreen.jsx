@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { X, AlertTriangle } from 'lucide-react'
-import { MOCK_COLUMNS } from '../mockData.js'
 
 const TYPE_COLORS = {
   'float64': '#1B6CF2',
@@ -129,14 +128,14 @@ function ColumnModal({ col, onClose }) {
   )
 }
 
-export default function ColumnProfileScreen() {
+export default function ColumnProfileScreen({ file, columns }) {
   const [selected, setSelected] = useState(null)
 
   return (
     <div className="page">
       <div className="page-header">
         <div className="breadcrumb">
-          <span>sales_data_q1_2024.csv</span>
+          <span>{file?.name}</span>
           <span>›</span>
           <span>Column Profiles</span>
         </div>
@@ -145,7 +144,7 @@ export default function ColumnProfileScreen() {
       </div>
 
       <div className="column-grid">
-        {MOCK_COLUMNS.map(col => (
+        {columns.map(col => (
           <div key={col.name} className="column-card" onClick={() => setSelected(col)}>
             <div className="column-card-header">
               <span className="col-name" style={{ fontSize: 13 }}>{col.name}</span>

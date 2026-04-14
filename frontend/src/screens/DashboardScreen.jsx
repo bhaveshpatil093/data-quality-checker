@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import { AlertTriangle, CheckCircle, Info, ArrowRight } from 'lucide-react'
-import { DQ_SCORES, MOCK_ISSUES } from '../mockData.js'
 
 const DIMS = [
   { key: 'completeness', label: 'Complete',   color: '#1B6CF2' },
   { key: 'uniqueness',   label: 'Unique',     color: '#00C9A7' },
   { key: 'consistency',  label: 'Consistent', color: '#FF8C42' },
-  { key: 'validity',     label: 'Valid',      color: '#FF4757' },
-  { key: 'accuracy',     label: 'Accurate',   color: '#FFD166' },
 ]
 
 function scoreClass(s) {
@@ -31,14 +28,14 @@ const CustomTooltip = ({ active, payload }) => {
   )
 }
 
-export default function DashboardScreen({ onNavigate }) {
+export default function DashboardScreen({ onNavigate, file, dataset, audit }) {
   const [animatedScore, setAnimatedScore] = useState(0)
-  const [dimScores, setDimScores] = useState({ completeness: 0, uniqueness: 0, consistency: 0, validity: 0, accuracy: 0 })
+  const [dimScores, setDimScores] = useState({ completeness: 0, uniqueness: 0, consistency: 0 })
 
   useEffect(() => {
     let frame
     let start = null
-    const target = DQ_SCORES.overall
+    const target = audit.scores.overall
     const animate = (ts) => {
       if (!start) start = ts
       const progress = Math.min((ts - start) / 900, 1)
@@ -47,23 +44,23 @@ export default function DashboardScreen({ onNavigate }) {
       if (progress < 1) frame = requestAnimationFrame(animate)
     }
     frame = requestAnimationFrame(animate)
-    setTimeout(() => setDimScores(DQ_SCORES), 300)
+    setTimeout(() => setDimScores(audit.scores), 300)
     return () => cancelAnimationFrame(frame)
-  }, [])
+  }, [audit.scores])
 
-  const critical = MOCK_ISSUES.filter(i => i.severity === 'critical').length
-  const warning  = MOCK_ISSUES.filter(i => i.severity === 'warning').length
-  const minor    = MOCK_ISSUES.filter(i => i.severity === 'minor').length
+  const critical = audit.issues.filter(i => i.severity === 'critical').length
+  const warning  = audit.issues.filter(i => i.severity === 'warning').length
+  const minor    = audit.issues.filter(i => i.severity === 'minor').length
 
   const radarData = DIMS.map(d => ({
     subject: d.label,
-    score: DQ_SCORES[d.key],
+    score: audit.scores[d.key],
     fullMark: 100,
   }))
 
   const barData = DIMS.map(d => ({
     name: d.label,
-    score: DQ_SCORES[d.key],
+    score: audit.scores[d.key],
     color: d.color,
   }))
 
@@ -73,12 +70,12 @@ export default function DashboardScreen({ onNavigate }) {
     <div className="page">
       <div className="page-header">
         <div className="breadcrumb">
-          <span>sales_data_q1_2024.csv</span>
+          <span>{file?.name}</span>
           <span>›</span>
           <span>Dashboard</span>
         </div>
         <h2>Quality Overview</h2>
-        <p>4,652 rows · 8 columns · Audited just now</p>
+        <p>{dataset.rows.length.toLocaleString()} rows · {dataset.headers.length} columns · Audited just now</p>
       </div>
 
       {/* Score + Dimensions */}
@@ -137,6 +134,18 @@ export default function DashboardScreen({ onNavigate }) {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-3)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Score Formula
+        </div>
+        <div style={{ color: 'var(--text-2)', fontSize: 13, marginBottom: 8 }}>
+          {audit.summary.scoreBreakdown.formula}
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>
+          Missing penalty: {audit.scores.penalties.missingValues} · Duplicate penalty: {audit.scores.penalties.duplicateRows} · Inconsistency penalty: {audit.scores.penalties.inconsistencies}
+        </div>
+      </div>
+
       {/* Issue summary */}
       <div className="issue-summary">
         <div className="issue-chip">
@@ -172,7 +181,7 @@ export default function DashboardScreen({ onNavigate }) {
       <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, rgba(27,108,242,0.12) 0%, rgba(0,201,167,0.06) 100%)', border: '1px solid rgba(27,108,242,0.2)' }}>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-            {MOCK_ISSUES.filter(i => !i.fixed).length} issues need your attention
+            {audit.issues.filter(i => !i.fixed).length} issues need your attention
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
             Review AI diagnoses and apply fixes to improve your DQ Score
