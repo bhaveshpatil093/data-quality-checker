@@ -104,6 +104,10 @@ export default function App() {
         {screen === 'issues'    && <IssuesScreen />}
         {screen === 'columns'   && <ColumnProfileScreen />}
         {screen === 'report'    && <ReportScreen />}
+
+        <footer className="hackathon-footer" role="contentinfo">
+          Built with 🤎 for the Databricks-Accenture Hackathon by Team Elite (Bhavesh Patil &amp; Shreya Shelar)
+        </footer>
       </div>
     </div>
   )
