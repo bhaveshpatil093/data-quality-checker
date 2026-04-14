@@ -32,6 +32,7 @@ export default function App() {
 
   const handleAnalyze = useCallback(() => { setHasFile(true); setScreen('analyzing') }, [])
   const handleDone = useCallback(() => setScreen('dashboard'), [])
+  const handleReaudit = useCallback(() => { setHasFile(true); setScreen('analyzing') }, [])
   const navigate = (id) => { if (id === 'upload') setHasFile(false); setScreen(id) }
   const pending = issues.filter(i => !i.fixed).length
 
@@ -39,7 +40,7 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <div className="wordmark">DQ<span>Sense</span></div>
+          <div className="wordmark">Data<span>IQ</span></div>
           <div className="tagline">Data Quality Platform</div>
         </div>
         <nav className="sidebar-nav">
@@ -103,7 +104,7 @@ export default function App() {
         {screen === 'dashboard' && <DashboardScreen onNavigate={navigate} />}
         {screen === 'issues'    && <IssuesScreen />}
         {screen === 'columns'   && <ColumnProfileScreen />}
-        {screen === 'report'    && <ReportScreen />}
+        {screen === 'report'    && <ReportScreen onReaudit={handleReaudit} />}
 
         <footer className="hackathon-footer" role="contentinfo">
           Built with 🤎 for the Databricks-Accenture Hackathon by Team Elite (Bhavesh Patil &amp; Shreya Shelar)
